@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Urban Threads - Admin</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+            color: #222;
+        }
+
+        header {
+            background: #111;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-radius: 12px;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0 15px;
+            border: 1px solid #ccc;
+            border-radius: 7px;
+            font-size: 15px;
+        }
+
+        button {
+            border: none;
+            padding: 12px 18px;
+            border-radius: 7px;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        .add-btn {
+            background: #111;
+            color: white;
+            width: 100%;
+        }
+
+        .delete-btn {
+            background: #d93025;
+            color: white;
+        }
+
+        .product {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .product img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .product-info {
+            flex: 1;
+        }
+
+        .order {
+            border: 1px solid #ddd;
+            padding: 18px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+        }
+
+        .message {
+            margin-top: 15px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>Urban Threads Admin</h1>
+    <p>Manage Products & Orders</p>
+</header>
+
+<div class="container">
+
+    <div style="text-align:center; margin-bottom:20px;">
+        <a href="/">← View Store</a>
+    </div>
+
+
+    <!-- ADD PRODUCT -->
+
+    <div class="card">
+
+        <h2>Add New Product</h2>
+
+        <form id="productForm">
+
+            <label>Product Name</label>
+
+            <input
+                type="text"
+                id="name"
+                placeholder="Example: Classic White Tee"
+                required
+            >
+
+
+            <label>Price (KES)</label>
+
+            <input
+                type="number"
+                id="price"
+                placeholder="Example: 800"
+                required
+            >
+
+
+            <label>Category</label>
+
+            <select id="category" required>
+
+                <option value="">Select category</option>
+                <option value="men">Men</option>
+                <option value="women">Women</option>
+                <option value="shoes">Shoes</option>
+                <option value="accessories">Accessories</option>
+                <option value="other">Other</option>
+
+            </select>
+
+
+            <label>Product Photo</label>
+
+            <input
+                type="file"
+                id="image"
+                accept="image/*"
+                required
+            >
+
+
+            <label>Description</label>
+
+            <textarea
+                id="description"
+                placeholder="Describe the product..."
+            ></textarea>
+
+
+            <button
+                class="add-btn"
+                type="submit"
+            >
+                Add Product
+            </button>
+
+        </form>
+
+        <div
+            id="message"
+            class="message"
+        ></div>
+
+    </div>
+
+
+    <!-- PRODUCTS -->
+
+    <div class="card">
+
+        <h2>Products</h2>
+
+        <div id="products">
+            Loading products...
+        </div>
+
+    </div>
+
+
+    <!-- ORDERS -->
+
+    <div class="card">
+
+        <h2>Customer Orders</h2>
+
+        <button onclick="loadOrders()">
+            Refresh Orders
+        </button>
+
+        <br><br>
+
+        <div id="orders">
+            Loading orders...
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+// ===============================
+// ADD PRODUCT
+// ===============================
+
+document
+    .getElementById("productForm")
+    .addEventListener("submit", async function(event) {
+
+        event.preventDefault();
+
+
+        const formData = new FormData();
+
+
+        formData.append(
+            "name",
+            document.getElementById("name").value
+        );
+
+
+        formData.append(
+            "price",
+            document.getElementById("price").value
+        );
+
+
+        formData.append(
+            "category",
+            document.getElementById("category").value
+        );
+
+
+        formData.append(
+            "description",
+            document.getElementById("description").value
+        );
+
+
+        const imageFile =
+            document.getElementById("image").files[0];
+
+
+        if (!imageFile) {
+
+            alert("Please choose a product photo.");
+
+            return;
+
+        }
+
+
+        formData.append(
+            "image",
+            imageFile
+        );
+
+
+        try {
+
+            const response =
+                await fetch(
+                    "/api/products",
+                    {
+                        method: "POST",
+                        body: formData
+                    }
+                );
+
+
+            const data =
+                await response.json();
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    data.error ||
+                    "Could not add product."
+                );
+
+            }
+
+
+            document.getElementById("message").textContent =
+                "Product added successfully!";
+
+
+            document
+                .getElementById("productForm")
+                .reset();
+
+
+            loadProducts();
+
+        }
+
+        catch(error) {
+
+            document.getElementById("message").textContent =
+                error.message;
+
+        }
+
+    });
+
+
+// ===============================
+// LOAD PRODUCTS
+// ===============================
+
+async function loadProducts() {
+
+    const response =
+        await fetch("/api/products");
+
+    const products =
+        await response.json();
+
+
+    const container =
+        document.getElementById("products");
+
+
+    if (products.length === 0) {
+
+        container.innerHTML =
+            "<p>No products added yet.</p>";
+
+        return;
+
+    }
+
+
+    container.innerHTML = "";
+
+
+    products.forEach(product => {
+
+        const div =
+            document.createElement("div");
+
+        div.className = "product";
+
+
+        div.innerHTML = `
+
+            <img
+                src="${product.image || ''}"
+                onerror="this.style.display='none'"
+            >
+
+            <div class="product-info">
+
+                <h3>${product.name}</h3>
+
+                <p>
+                    <strong>
+                        KES ${Number(product.price).toLocaleString()}
+                    </strong>
+                </p>
+
+                <p>
+                    Category: ${product.category}
+                </p>
+
+                <p>
+                    ${product.description || ""}
+                </p>
+
+                <button
+                    class="delete-btn"
+                    onclick="deleteProduct(${product.id})"
+                >
+                    Delete
+                </button>
+
+            </div>
+
+        `;
+
+
+        container.appendChild(div);
+
+    });
+
+}
+
+
+// ===============================
+// DELETE PRODUCT
+// ===============================
+
+async function deleteProduct(id) {
+
+    if (
+        !confirm(
+            "Are you sure you want to delete this product?"
+        )
+    ) {
+        return;
+    }
+
+
+    await fetch(
+        `/api/products/${id}`,
+        {
+            method: "DELETE"
+        }
+    );
+
+
+    loadProducts();
+
+}
+
+
+// ===============================
+// LOAD ORDERS
+// ===============================
+
+async function loadOrders() {
+
+    const response =
+        await fetch("/api/orders");
+
+    const orders =
+        await response.json();
+
+
+    const container =
+        document.getElementById("orders");
+
+
+    if (orders.length === 0) {
+
+        container.innerHTML =
+            "<p>No orders yet.</p>";
+
+        return;
+
+    }
+
+
+    container.innerHTML = "";
+
+
+    orders.forEach(order => {
+
+        const div =
+            document.createElement("div");
+
+        div.className = "order";
+
+
+        div.innerHTML = `
+
+            <h3>Order #${order.id}</h3>
+
+            <p>
+                <strong>Customer:</strong>
+                ${order.customer_name}
+            </p>
+
+            <p>
+                <strong>Phone:</strong>
+                ${order.phone}
+            </p>
+
+            <p>
+                <strong>Location:</strong>
+                ${order.location || "Not provided"}
+            </p>
+
+            <p>
+                <strong>Total:</strong>
+                KES ${Number(order.total).toLocaleString()}
+            </p>
+
+            <p>
+                <strong>Status:</strong>
+                ${order.status}
+            </p>
+
+            <p>
+                <strong>Date:</strong>
+                ${order.created_at}
+            </p>
+
+        `;
+
+
+        container.appendChild(div);
+
+    });
+
+}
+
+
+// ===============================
+// START
+// ===============================
+
+loadProducts();
+
+loadOrders();
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>KIPKOECH URBANS COLLECTION</title>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    background: #f6f6f6;
+    color: #222;
+}
+
+/* HEADER */
+header {
+    background: #111;
+    color: white;
+    padding: 15px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+header h1 {
+    font-size: 21px;
+    letter-spacing: 2px;
+}
+
+nav a {
+    color: #ddd;
+    text-decoration: none;
+    margin: 0 10px;
+}
+
+nav a:hover {
+    color: white;
+}
+
+#cart-btn {
+    background: #e63946;
+    border: none;
+    color: white;
+    padding: 9px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+}
+
+/* HERO */
+.hero {
+    height: 60vh;
+    background:
+        linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)),
+        url("https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1400")
+        center/cover;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    color: white;
+    text-align: center;
+}
+
+.hero h2 {
+    font-size: 42px;
+    margin-bottom: 10px;
+}
+
+.hero p {
+    font-size: 18px;
+    margin-bottom: 20px;
+}
+
+.hero button {
+    background: #e63946;
+    color: white;
+    border: none;
+    padding: 14px 30px;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+/* FILTERS */
+.filters {
+    text-align: center;
+    padding: 30px 10px 10px;
+}
+
+.filters button {
+    background: white;
+    border: 1px solid #ccc;
+    padding: 8px 18px;
+    margin: 4px;
+    border-radius: 20px;
+    cursor: pointer;
+}
+
+.filters button.active {
+    background: #111;
+    color: white;
+}
+
+/* PRODUCTS */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 25px;
+
+    max-width: 1200px;
+    margin: auto;
+
+    padding: 25px 40px 60px;
+}
+
+.card {
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+
+    box-shadow: 0 2px 8px rgba(0,0,0,.08);
+}
+
+.card img {
+    width: 100%;
+    height: 260px;
+    object-fit: cover;
+}
+
+.card-body {
+    padding: 15px;
+}
+
+.card-body h3 {
+    margin-bottom: 8px;
+}
+
+.price {
+    color: #e63946;
+    font-weight: bold;
+    margin-bottom: 12px;
+}
+
+.card-body button {
+    width: 100%;
+    background: #111;
+    color: white;
+    border: none;
+    padding: 11px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.card-body button:hover {
+    background: #e63946;
+}
+
+/* CART */
+#cart-panel {
+    position: fixed;
+    right: -380px;
+    top: 0;
+
+    width: 360px;
+    height: 100%;
+
+    background: white;
+
+    box-shadow: -3px 0 12px rgba(0,0,0,.2);
+
+    transition: right .3s;
+
+    padding: 20px;
+
+    overflow-y: auto;
+
+    z-index: 20;
+}
+
+#cart-panel.open {
+    right: 0;
+}
+
+#close-cart {
+    float: right;
+
+    background: none;
+    border: none;
+
+    font-size: 22px;
+    cursor: pointer;
+}
+
+.cart-item {
+    display: flex;
+    justify-content: space-between;
+
+    border-bottom: 1px solid #eee;
+
+    padding: 12px 0;
+}
+
+.remove {
+    color: #e63946;
+    cursor: pointer;
+}
+
+/* CHECKOUT */
+#checkout-box {
+    margin-top: 20px;
+}
+
+#checkout-box input,
+#checkout-box textarea {
+    width: 100%;
+
+    padding: 10px;
+
+    margin-bottom: 10px;
+
+    border: 1px solid #ccc;
+
+    border-radius: 6px;
+}
+
+#checkout-box button {
+    width: 100%;
+
+    background: #e63946;
+
+    color: white;
+
+    border: none;
+
+    padding: 12px;
+
+    border-radius: 6px;
+
+    cursor: pointer;
+}
+
+/* FOOTER */
+footer {
+    background: #111;
+    color: #aaa;
+    text-align: center;
+    padding: 25px;
+}
+
+@media(max-width:700px) {
+
+    header {
+        padding: 15px;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    nav {
+        display: none;
+    }
+
+    .hero h2 {
+        font-size: 32px;
+    }
+
+    #cart-panel {
+        width: 100%;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+
+<h1>KIPKOECH URBANS COLLECTION</h1>
+
+<nav>
+<a href="#shop">Shop</a>
+<a href="#shop">Men</a>
+<a href="#shop">Women</a>
+<a href="#shop">Shoes</a>
+</nav>
+
+<button id="cart-btn" onclick="toggleCart()">
+🛒 Cart (<span id="cart-count">0</span>)
+</button>
+
+</header>
+
+
+<section class="hero">
+
+<h2>New Season Collection</h2>
+
+<p>Fresh styles. Fair prices. Delivered to your door.</p>
+
+<button onclick="document.getElementById('shop').scrollIntoView({behavior:'smooth'})">
+Shop Now
+</button>
+
+</section>
+
+
+<div class="filters" id="shop">
+
+<button class="active" onclick="filterProducts('all', this)">
+All
+</button>
+
+<button onclick="filterProducts('men', this)">
+Men
+</button>
+
+<button onclick="filterProducts('women', this)">
+Women
+</button>
+
+<button onclick="filterProducts('shoes', this)">
+Shoes
+</button>
+
+</div>
+
+
+<main class="grid" id="product-grid">
+
+<p>Loading products...</p>
+
+</main>
+
+
+<!-- CART -->
+
+<div id="cart-panel">
+
+<button id="close-cart" onclick="toggleCart()">✕</button>
+
+<h2>Your Cart</h2>
+
+<div id="cart-items"></div>
+
+<h3 style="margin-top:15px;">
+Total: KES <span id="cart-total">0</span>
+</h3>
+
+
+<!-- CHECKOUT -->
+
+<div id="checkout-box">
+
+<h3 style="margin:20px 0 10px;">
+Checkout
+</h3>
+
+<input
+    type="text"
+    id="customer-name"
+    placeholder="Your full name"
+>
+
+<input
+    type="tel"
+    id="customer-phone"
+    placeholder="M-Pesa phone number e.g. 0712345678"
+>
+
+<textarea
+    id="customer-location"
+    placeholder="Delivery location"
+></textarea>
+
+<button onclick="checkout()">
+Pay with M-Pesa
+</button>
+
+</div>
+
+</div>
+
+
+<footer>
+
+<p>
+© 2026 KIPKOECH Urban Threads · Nairobi, Kenya · Tel: 0711 314607
+</p>
+
+</footer>
+
+
+<script>
+
+let products = [];
+let cart = [];
+
+
+/* LOAD PRODUCTS FROM DATABASE */
+
+async function loadProducts() {
+
+    try {
+
+        const response = await fetch("/api/products");
+
+        products = await response.json();
+
+        renderProducts(products);
+
+    } catch (error) {
+
+        console.error(error);
+
+        document.getElementById("product-grid").innerHTML =
+            "<p>Unable to load products.</p>";
+    }
+}
+
+
+/* DISPLAY PRODUCTS */
+
+function renderProducts(list) {
+
+    const grid = document.getElementById("product-grid");
+
+    if (!list.length) {
+
+        grid.innerHTML =
+            "<p>No products available yet.</p>";
+
+        return;
+    }
+
+    grid.innerHTML = list.map(product => `
+
+        <div class="card">
+
+            <img
+                src="${product.image || 'https://via.placeholder.com/500'}"
+                alt="${product.name}"
+            >
+
+            <div class="card-body">
+
+                <h3>
+                    ${product.name}
+                </h3>
+
+                <p class="price">
+                    KES ${Number(product.price).toLocaleString()}
+                </p>
+
+                <button onclick="addToCart(${product.id})">
+                    Add to Cart
+                </button>
+
+            </div>
+
+        </div>
+
+    `).join("");
+}
+
+
+/* FILTER PRODUCTS */
+
+function filterProducts(category, button) {
+
+    document
+        .querySelectorAll(".filters button")
+        .forEach(btn => btn.classList.remove("active"));
+
+    button.classList.add("active");
+
+    if (category === "all") {
+
+        renderProducts(products);
+
+    } else {
+
+        renderProducts(
+            products.filter(product =>
+                product.category === category
+            )
+        );
+
+    }
+}
+
+
+/* ADD TO CART */
+
+function addToCart(id) {
+
+    const product =
+        products.find(product => product.id === id);
+
+    if (!product) return;
+
+    cart.push(product);
+
+    updateCart();
+
+}
+
+
+/* REMOVE FROM CART */
+
+function removeFromCart(index) {
+
+    cart.splice(index, 1);
+
+    updateCart();
+
+}
+
+
+/* UPDATE CART */
+
+function updateCart() {
+
+    document.getElementById("cart-count").textContent =
+        cart.length;
+
+
+    const container =
+        document.getElementById("cart-items");
+
+
+    if (!cart.length) {
+
+        container.innerHTML =
+            "<p style='color:#888;margin-top:20px'>Your cart is empty.</p>";
+
+    } else {
+
+        container.innerHTML = cart.map((item, index) => `
+
+            <div class="cart-item">
+
+                <div>
+
+                    <strong>${item.name}</strong>
+
+                    <br>
+
+                    <small>
+                        KES ${Number(item.price).toLocaleString()}
+                    </small>
+
+                </div>
+
+                <span
+                    class="remove"
+                    onclick="removeFromCart(${index})"
+                >
+                    ✕
+                </span>
+
+            </div>
+
+        `).join("");
+
+    }
+
+
+    const total =
+        cart.reduce(
+            (sum, item) => sum + Number(item.price),
+            0
+        );
+
+
+    document.getElementById("cart-total").textContent =
+        total.toLocaleString();
+
+}
+
+
+/* OPEN / CLOSE CART */
+
+function toggleCart() {
+
+    document
+        .getElementById("cart-panel")
+        .classList.toggle("open");
+
+}
+
+
+/* CHECKOUT */
+
+async function checkout() {
+
+    if (!cart.length) {
+
+        alert("Your cart is empty!");
+
+        return;
+    }
+
+
+    const name =
+        document.getElementById("customer-name").value.trim();
+
+    const phone =
+        document.getElementById("customer-phone").value.trim();
+
+    const location =
+        document.getElementById("customer-location").value.trim();
+
+
+    if (!name || !phone) {
+
+        alert("Please enter your name and M-Pesa phone number.");
+
+        return;
+    }
+
+
+    const total =
+        cart.reduce(
+            (sum, item) => sum + Number(item.price),
+            0
+        );
+
+
+    const items = cart.map(item => ({
+
+        product_id: item.id,
+
+        product_name: item.name,
+
+        price: item.price,
+
+        quantity: 1
+
+    }));
+
+
+    try {
+
+        const response = await fetch("/api/orders", {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+
+                customer_name: name,
+
+                phone: phone,
+
+                location: location,
+
+                total: total,
+
+                items: items
+
+            })
+
+        });
+
+
+        const result = await response.json();
+
+
+        if (!response.ok) {
+
+            alert(result.error || "Order failed.");
+
+            return;
+        }
+
+
+        alert(
+            "Order received! Your M-Pesa payment will be processed shortly."
+        );
+
+
+        cart = [];
+
+        updateCart();
+
+        toggleCart();
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert(
+            "Unable to connect to the server."
+        );
+
+    }
+
+}
+
+
+/* START */
+
+loadProducts();
+
+updateCart();
+
+</script>
+
+</body>
+</html>
