@@ -4,16 +4,37 @@ const fs = require("fs");
 const multer = require("multer");
 const db = require("./database");
 
-cb(null, uploadsPath);
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+const uploadsPath = path.join(__dirname, "public", "uploads");
+
 fs.mkdirSync(uploadsPath, { recursive: true });
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, uploadsPath);
+    },
 
-// ===============================
-// TEST
-// ===============================
+    filename: function (req, file, cb) {
+        const extension = path.extname(file.originalname);
+        const filename = Date.now() + extension;
+
+        cb(null, filename);
+    }
+});
+
+const upload = multer({
+    storage: storage,
+
+    limits: {
+        fileSize: 5 * 1024 * 1024
+    }
+});
 
 app.get("/api/test", (req, res) => {
     res.json({
@@ -21,14 +42,7 @@ app.get("/api/test", (req, res) => {
     });
 });
 
-
-// ===============================
-// PRODUCTS
-// ===============================
-
-// Get all products
 app.get("/api/products", (req, res) => {
-
     const products = db
         .prepare("SELECT * FROM products ORDER BY id DESC")
         .all();
@@ -36,69 +50,85 @@ app.get("/api/products", (req, res) => {
     res.json(products);
 });
 
+app.post(
+    "/api/products",
+    upload.single("image"),
+    (req, res) => {
+        try {
+            const {
+                name,
+                price,
+                category,
+                description
+            } = req.body;
 
-// Add product
-app.post("/api/products", (req, res) => {
+            if (!name || !price || !category) {
+                return res.status(400).json({
+                    error: "Name, price and category are required."
+                });
+            }
 
-    const {
-        name,
-        price,
-        category,
-        image,
-        description
-    } = req.body;
+            let image = "";
 
-    if (!name || !price || !category) {
+            if (req.file) {
+                image = "/uploads/" + req.file.filename;
+            }
 
-        return res.status(400).json({
-            error: "Name, price and category are required."
+            const result = db.prepare(`
+                INSERT INTO products
+                (
+                    name,
+                    price,
+                    category,
+                    image,
+                    description
+                )
+                VALUES (?, ?, ?, ?, ?)
+            `).run(
+                name,
+                Number(price),
+                category,
+                image,
+                description || ""
+            );
+
+            res.json({
+                message: "Product added successfully!",
+                productId: result.lastInsertRowid
+            });
+
+        } catch (error) {
+            console.error(error);
+
+            res.status(500).json({
+                error: "Could not add product."
+            });
+        }
+    }
+);
+
+app.delete("/api/products/:id", (req, res) => {
+    try {
+        const id = Number(req.params.id);
+
+        db.prepare(
+            "DELETE FROM products WHERE id = ?"
+        ).run(id);
+
+        res.json({
+            message: "Product deleted successfully!"
         });
 
+    } catch (error) {
+        console.error(error);
+
+        res.status(500).json({
+            error: "Could not delete product."
+        });
     }
-
-    const result = db.prepare(`
-        INSERT INTO products
-        (name, price, category, image, description)
-        VALUES (?, ?, ?, ?, ?)
-    `).run(
-        name,
-        Number(price),
-        category,
-        image || "",
-        description || ""
-    );
-
-    res.json({
-        message: "Product added successfully!",
-        productId: result.lastInsertRowid
-    });
-
 });
 
-
-// Delete product
-app.delete("/api/products/:id", (req, res) => {
-
-    const id = Number(req.params.id);
-
-    db.prepare(
-        "DELETE FROM products WHERE id = ?"
-    ).run(id);
-
-    res.json({
-        message: "Product deleted successfully!"
-    });
-
-});
-
-
-// ===============================
-// ORDERS
-// ===============================
-
-// Create order
 app.post("/api/orders", (req, res) => {
-
     const {
         customer_name,
         phone,
@@ -107,7 +137,6 @@ app.post("/api/orders", (req, res) => {
         items
     } = req.body;
 
-
     if (
         !customer_name ||
         !phone ||
@@ -115,124 +144,97 @@ app.post("/api/orders", (req, res) => {
         !items ||
         !items.length
     ) {
-
         return res.status(400).json({
             error: "Please provide customer details and cart items."
         });
-
     }
 
+    try {
+        const createOrder = db.transaction(() => {
 
-    const createOrder = db.transaction(() => {
-
-        const order = db.prepare(`
-            INSERT INTO orders
-            (
+            const order = db.prepare(`
+                INSERT INTO orders
+                (
+                    customer_name,
+                    phone,
+                    location,
+                    total,
+                    status
+                )
+                VALUES (?, ?, ?, ?, ?)
+            `).run(
                 customer_name,
                 phone,
-                location,
-                total,
-                status
-            )
-            VALUES (?, ?, ?, ?, ?)
-        `).run(
-            customer_name,
-            phone,
-            location || "",
-            Number(total),
-            "Pending Payment"
-        );
-
-
-        const orderId = order.lastInsertRowid;
-
-
-        const insertItem = db.prepare(`
-            INSERT INTO order_items
-            (
-                order_id,
-                product_id,
-                product_name,
-                price,
-                quantity
-            )
-            VALUES (?, ?, ?, ?, ?)
-        `);
-
-
-        for (const item of items) {
-
-            insertItem.run(
-                orderId,
-                item.product_id,
-                item.product_name,
-                Number(item.price),
-                Number(item.quantity || 1)
+                location || "",
+                Number(total),
+                "Pending Payment"
             );
 
-        }
+            const orderId = order.lastInsertRowid;
 
+            const insertItem = db.prepare(`
+                INSERT INTO order_items
+                (
+                    order_id,
+                    product_id,
+                    product_name,
+                    price,
+                    quantity
+                )
+                VALUES (?, ?, ?, ?, ?)
+            `);
 
-        return orderId;
+            for (const item of items) {
+                insertItem.run(
+                    orderId,
+                    item.product_id,
+                    item.product_name,
+                    Number(item.price),
+                    Number(item.quantity || 1)
+                );
+            }
 
-    });
-
-
-    try {
+            return orderId;
+        });
 
         const orderId = createOrder();
 
-
         res.json({
-
             message: "Order created successfully!",
-
             orderId: orderId,
-
             status: "Pending Payment"
-
         });
 
     } catch (error) {
-
         console.error(error);
 
         res.status(500).json({
             error: "Could not create order."
         });
-
     }
-
 });
 
-
-// ===============================
-// GET ORDERS
-// ===============================
-
 app.get("/api/orders", (req, res) => {
-
-    const orders = db
-        .prepare(`
+    try {
+        const orders = db.prepare(`
             SELECT *
             FROM orders
             ORDER BY id DESC
-        `)
-        .all();
+        `).all();
 
-    res.json(orders);
+        res.json(orders);
 
+    } catch (error) {
+        console.error(error);
+
+        res.status(500).json({
+            error: "Could not load orders."
+        });
+    }
 });
 
-
-// ===============================
-// START SERVER
-// ===============================
-
 app.listen(PORT, () => {
-
     console.log(
         `Urban Threads is running at http://localhost:${PORT}`
     );
-
 });
